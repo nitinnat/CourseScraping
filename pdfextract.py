@@ -94,8 +94,10 @@ for i,ind in enumerate(otherInds):
                     courseDict[courses[0]]['prerequisites'] = courses[1:]
                 else: 
                     courseDict[courses[0]]['prerequisites'] = None
-                
-             
+
+##-----Enter information into a database-------#
+import pickle
+pickle.dump(courseDict,open('courseDict.pkl','wb'),protocol=2)
                 
 
                 

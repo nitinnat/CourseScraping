@@ -1,6 +1,17 @@
 from bs4 import BeautifulSoup
 import requests
 from tqdm import tqdm
+import os
+import pickle
+
+##----------Load course information---------------###
+if not os.path.exists("./courseDict.pkl"):
+    #Run pdfextract.py file
+    print("Extracting course area information from the pdf...")
+    exec(open('pdfextract.py').read())
+else:
+    print("Loading course area information from pickle file...")
+    courseDict = pickle.load(open("courseDict.pkl",'rb'))
 
 ##----------Retrieve page content---------------###
 courseScheduleURL = "http://www.buffalo.edu/class-schedule?switch=showcourses&semester=spring&division=GRAD&dept=CSE"
@@ -31,8 +42,11 @@ for i in tqdm(range(8,len(tr_text)-3)):
     #Remove intermediate header rows as on webpage
     #Remove Thesis Guidance, Independent Study and Supervised Research
     if (not temp[0] == 'Class'
-        and (not temp[2] in ['Supervised Research', 'Thesis Guidance','Independent Study'])):
-        
+        and (not temp[2] in ['Supervised Research', 'Thesis Guidance',
+             'Independent Study', 'Computr Sci For Nonmajr 1',
+             'Computr Sci For Nonmajr 2'])
+        ):
+
         ##Get information about the course by scraping its site
         courseInfoURL = "https://catalog.buffalo.edu/courses/index.php?abbr=CSE&num=" + str(temp[1].split()[1][0:3])
         temppage = requests.get(courseInfoURL)
@@ -42,11 +56,29 @@ for i in tqdm(range(8,len(tr_text)-3)):
             course_desc = wrapper.get_text()
         temp.append(course_desc)
         
+        ##Add the course focus area and type information
+        try:
+            temp.append(courseDict['CSE' + temp[1].split()[-1][0:3]]['area'])
+        except KeyError:
+            temp.append('N/A')
+        
+        try:
+            temp.append(courseDict['CSE' + temp[1].split()[-1][0:3]]['type'])
+        except KeyError:
+            temp.append('N/A') 
+        try:
+            temp.append(str(courseDict['CSE' + temp[1].split()[-1][0:3]]['prerequisites']))
+        except KeyError:
+            temp.append('N/A')
         #Format the time column, column 6
         if temp[6] != 'TBA':
             temp[6] = '-'.join([t.strip() for t in temp[6].split('-')])
         course_details.append(temp)
 headers.append('Course Information')
+headers.append('Focus Area')
+headers.append('Core/Elective')
+headers.append('Prerequisites')
+
 
        
     
@@ -65,7 +97,9 @@ c.execute('''CREATE TABLE IF NOT EXISTS UBcourses
              Title text, Section text, 
              Type text, Days text,
              Time text, Location text,
-             Instructor text, Status text, CourseInfo text)''')
+             Instructor text, Status text, 
+             CourseInfo text, FocusArea text,
+             CoreElective text, Prerequisites text)''')
 
 
 
@@ -77,8 +111,9 @@ for i,row in enumerate(course_details):
     for item in row:
 """        
 c.executemany("""INSERT INTO UBcourses (Class, Course, Title, Section, 
-                Type, Days, Time, Location, Instructor, Status, CourseInfo) 
-                VALUES (?,?,?,?,?,?,?,?,?,?,?)""", course_details)
+                Type, Days, Time, Location, Instructor, Status, CourseInfo,
+                FocusArea, CoreElective, Prerequisites) 
+                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)""", course_details)
 
 # Save (commit) the changes
 conn.commit()
