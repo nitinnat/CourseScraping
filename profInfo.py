@@ -6,6 +6,9 @@ import pickle
 import json
 import time
 
+from dbHelper import createTable
+
+
 def grabProfRatings(override = False):
     if not os.path.exists("./profRatings.pkl"):
         print("Loading professor information for the first time. This may take a while.")
@@ -82,8 +85,25 @@ tablename = "profInfo"
 
 num_profs = len(cs_profs_list)
 #For the primary key, we'll use the tid that RateMyProfessors uses.
-profIDs = [cs_profs_list[i]['tid'] for i in range(num_profs)]
+colvalues = []
+for item in cs_profs_list:
+    temp = []
+    temp.append(item['tid'])
+    temp.append(item['tFname'])
+    temp.append(item['tMiddlename'])
+    temp.append(item['tLname'])
+    temp.append(item['tNumRatings'])
+    temp.append(item['rating_class'])
+    temp.append(item['overall_rating'])
+    temp.append(item['tDept'])
+    temp.append(pickle.dumps(item['class_info']))
+    temp.append(pickle.dumps(item['comment_info']))
+    colvalues.append(temp)
+    
 
+colnames = ['prof_id', 'first_name','middle_name','last_name','num_ratings',
+            'rating_class','overall_rating','department','class_info',
+            'comment_info'] 
+coltypes = ['text']*8 + ['blob']*2
 
-
-
+createTable(dbname,tablename,colnames, coltypes,colvalues)

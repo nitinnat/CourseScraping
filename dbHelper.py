@@ -29,21 +29,20 @@ def createTable(dbname, tablename,colnames,coltypes, colvalues, override=True):
     column_query_part = ','.join([colnames[i] + ' ' + coltypes[i] for i in range(len(colnames))])
     table_creation_query = "CREATE TABLE IF NOT EXISTS " + tablename +\
                            " (" + column_query_part + ")"                        
-    
+    print(table_creation_query)
     try:
         print("Creating table...")                
         c.execute(table_creation_query)
     except:
         print("Unable to create table.")
     
-    try:
-        print("Inserting values into the table...")
-        column_value_part = "INSERT INTO " + tablename +\
-                            " (" + ','.join(colnames) + ") " +\
-                            "VALUES (" + ",".join(['?']*len(colnames)) +")"
-        c.executemany(column_value_part, colvalues)
-    except:
-        print("Unable to insert values into table.")
+
+    print("Inserting values into the table...")
+    column_value_part = "INSERT INTO " + tablename +\
+                        " (" + ','.join(colnames) + ") " +\
+                        "VALUES (" + ",".join(['?']*len(colnames)) +")"
+    c.executemany(column_value_part, colvalues)
+
     # Save (commit) the changes
     conn.commit()
     print("Changes committed.")
