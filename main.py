@@ -3,21 +3,14 @@ import requests
 from tqdm import tqdm
 import os
 import pickle
-import json
-import time
 from profInfo import grabProfRatings  #Function to get info from Rate My Professors
-
-
+from pdfextract import extractFromPDF
+from dbHelper import createTable
 
 
 ##----------Load course information---------------###
-if not os.path.exists("./courseDict.pkl"):
-    #Run pdfextract.py file
-    print("Extracting course area information from the pdf...")
-    exec(open('pdfextract.py').read())
-else:
-    print("Loading course area information from pickle file...")
-    courseDict = pickle.load(open("courseDict.pkl",'rb'))
+
+courseDict = extractFromPDF()
 
 ##----------Retrieve page content---------------###
 courseScheduleURL = "http://www.buffalo.edu/class-schedule?switch=showcourses&semester=spring&division=GRAD&dept=CSE"
@@ -78,12 +71,12 @@ for i in tqdm(range(8,len(tr_text)-3)):
         
         ##Now to scrape the professor and course rating info!
         ##Part 1 - Scrape prof's full name from UB Course directory
-        courseInfoURL = '''http://www.buffalo.edu/class-schedule?switch=showclass&semester=
-                            spring&division=GRAD&dept=CSE&regnum=''' + str(temp[0])
+        courseInfoURL = "http://www.buffalo.edu/class-schedule?switch=showclass&semester=spring&division=GRAD&dept=CSE&regnum=" + str(temp[0])
+        
         temppage2 = requests.get(courseInfoURL)
         tempsoup2 = BeautifulSoup(temppage2.content, 'html.parser')
         profLookupLink =  [link['href'] for link in tempsoup2.find_all('a', href=True, text='look up')]
-        print(profLookupLink)
+        
         try:
             profLookupLink = profLookupLink[0]
             #Part 2 - Scrape the prof's full name from the directory
@@ -94,7 +87,10 @@ for i in tqdm(range(8,len(tr_text)-3)):
                             if temp[8].split(',')[0].lower() in b_tag.get_text().lower()][0]
             temp.append(profFullName)
             
-            #Part 3 - Scrape the prof's ratings from Rate My Professors
+            #Part 3 - Scrape the prof's average rating from Rate My Professors
+            cs_profs_list = grabProfRatings()
+            
+            
         except IndexError:
             profLookupLink = 'N/A'
             temp.append('N/A')
@@ -113,8 +109,16 @@ headers.append('Prerequisites')
 headers.append('Prof Full Name')
 
 
-       
+dbname = 'CourseSchedule'
+tablename = 'UBcourses'
+colnames = ['Class','Course','Title','Section','Type', 'Days',
+            'Time', 'Location','Instructor','Status','CourseInfo', 
+            'FocusArea','CoreElective','Prerequisites','ProfFullName'
+            ]
+coltypes = ['text']*len(colnames)
 
+createTable(dbname,tablename,colnames,coltypes, course_details)
+"""
 ##----------Enter into database---------------###
     
 import sqlite3
@@ -150,3 +154,4 @@ conn.commit()
 for row in c.execute('SELECT * FROM UBcourses'):
     print(row)
 conn.close()
+"""

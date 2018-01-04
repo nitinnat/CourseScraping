@@ -76,3 +76,14 @@ def grabProfRatings(override = False):
         cs_profs_list = pickle.load(open("./CSProfList.pkl",'rb'))
     return cs_profs_list
 
+cs_profs_list = grabProfRatings()
+dbname = "UBCourses"
+tablename = "profInfo"
+
+num_profs = len(cs_profs_list)
+#For the primary key, we'll use the tid that RateMyProfessors uses.
+profIDs = [cs_profs_list[i]['tid'] for i in range(num_profs)]
+
+
+
+
