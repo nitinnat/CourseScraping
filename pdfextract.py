@@ -22,10 +22,10 @@ def extractFromPDF(override = False):
         pdfFileObj = open('grad-handbook-2016.pdf', 'rb')
         pdfReader = PyPDF2.PdfFileReader(pdfFileObj)
         
-        #Extract pages 12-14
+        #Extract pages 11-13
         pagesNeeded = '\n'.join([pdfReader.getPage(i).extractText() for i in range(11,14)])
         
-        #Check page 12 for Focus Areas and Core Courses
+        #Check page 11 for Focus Areas and Core Courses
         
         ##Find the starting and ending indices to look for, for focus area courses
         pg = pagesNeeded.split('\n')
